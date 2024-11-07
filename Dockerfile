@@ -1,6 +1,6 @@
 ARG DOCKER_UID=1000
 
-FROM php:8.3-apache
+FROM php:8.3-cli
 
 RUN apt update \
     && apt install -y \

@@ -4,11 +4,13 @@
 
 require __DIR__.'/../vendor/autoload.php';
 
+use PimUpsertProductTool\UpsertProductCommand;
 use Symfony\Component\Console\Application;
 
 $application = new Application();
 
 // ... register commands
+$application->add(new UpsertProductCommand());
 
 $application->run();
 
