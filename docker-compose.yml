@@ -1,0 +1,23 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - DOCKER_UID=${DOCKER_UID}
+    environment:
+      APP_ENV: '${APP_ENV:-prod}'
+      COMPOSER_HOME: '/var/www/.composer'
+      PHP_IDE_CONFIG: 'serverName=pim-docker-cli'
+      XDEBUG_CONFIG: 'client_host=172.17.0.1'
+      XDEBUG_MODE: '${XDEBUG_MODE:-off}'
+      ASPELL_BINARY_PATH: '${ASPELL_BINARY_PATH:-aspell}'
+      EXPERIMENTAL_TEST_DATABASE: '${EXPERIMENTAL_TEST_DATABASE:-0}'
+      BEHAT_SCREENSHOT_PATH: '/srv/pim/var/tests/screenshots'
+    volumes:
+      - './:/srv/app'
+      - '${HOST_COMPOSER_HOME:-~/.composer}:/var/www/.composer'
+    working_dir: '/srv/app'
+    command: 'php'
+    init: true
+
