@@ -20,4 +20,9 @@ services:
     working_dir: '/srv/app'
     command: 'php'
     init: true
+    networks:
+      - 'pim-enterprise-dev_pim'
 
+networks:
+  pim-enterprise-dev_pim:
+    external: true

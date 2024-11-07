@@ -6,6 +6,18 @@ require __DIR__.'/../vendor/autoload.php';
 
 use PimUpsertProductTool\UpsertProductCommand;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Dotenv\Dotenv;
+
+$env = new Dotenv();
+$envFiles = \array_filter(
+    [
+        __DIR__ . '/../.env.dist',
+        __DIR__ . '/../.env',
+        __DIR__ . '/../.env.local',
+    ],
+    static fn ($file): bool => \file_exists($file)
+);
+$env->load(...$envFiles);
 
 $application = new Application();
 
