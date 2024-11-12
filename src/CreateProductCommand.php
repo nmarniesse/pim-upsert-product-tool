@@ -19,7 +19,7 @@ final class CreateProductCommand extends Command
 {
     protected function configure(): void
     {
-        $this->addOption('count', 'c', InputOption::VALUE_OPTIONAL, 'Number of products to generate', 9999);
+        $this->addOption('count', 'c', InputOption::VALUE_OPTIONAL, 'Number of products to generate', 0);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -43,7 +43,10 @@ final class CreateProductCommand extends Command
         $output->writeln('');
         $output->writeln('Begin to generate products...');
         $valuesGenerator = new ValuesGenerator();
-        for ($i = 1; $i <= $numberOfProductsToGenerate; $i++) {
+
+        $i = 0;
+        do {
+            $i++;
             $uuid = Uuid::uuid4();
 
             $family = $families[rand(0, \count($families) - 1)];
@@ -60,7 +63,7 @@ final class CreateProductCommand extends Command
             $client->getProductApi()->upsert($uuid->toString(), $data);
             $output->writeln('<info>[' . $i . '] Product created: ' . $uuid->toString() . '</info>');
 //            print_r($data);
-        }
+        } while ($numberOfProductsToGenerate <= 0 || $i < $numberOfProductsToGenerate);
 
         return Command::SUCCESS;
     }

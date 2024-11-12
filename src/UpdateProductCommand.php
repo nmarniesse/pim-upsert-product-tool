@@ -59,7 +59,10 @@ final class UpdateProductCommand extends Command
         $output->writeln('');
         $output->writeln('Begin to generate products...');
         $valuesGenerator = new ValuesGenerator();
-        for ($i = 1; $i <= $numberOfProductsToUpdate; $i++) {
+
+        $i = 0;
+        do {
+            $i++;
             $product = $productUuids[\rand(0, \count($productUuids))];
             $family = $indexedFamily[$product['family']];
 
@@ -76,7 +79,7 @@ final class UpdateProductCommand extends Command
             $client->getProductApi()->upsert($product['uuid'], $data);
             $output->writeln('<info>[' . $i . '] Product updated: ' . $product['uuid'] . '</info>');
 //            print_r($data);
-        }
+        } while ($numberOfProductsToUpdate <= 0 || $i < $numberOfProductsToUpdate);
 
         return Command::SUCCESS;
     }
