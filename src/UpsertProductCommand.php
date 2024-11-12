@@ -32,7 +32,7 @@ final class UpsertProductCommand extends Command
         $clientId = $_ENV['CLIENT_ID'];
         $secret = $_ENV['CLIENT_SECRET'];
         $username = $_ENV['USERNAME'];
-        $password = $_ENV['PASSORD'];
+        $password = $_ENV['PASSWORD'];
 
         $faker = Factory::create();
         $numberOfProductsToGenerate = (int) $input->getOption('count');
