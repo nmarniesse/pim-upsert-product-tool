@@ -4,7 +4,8 @@
 
 require __DIR__.'/../vendor/autoload.php';
 
-use PimUpsertProductTool\UpsertProductCommand;
+use PimUpsertProductTool\CreateProductCommand;
+use PimUpsertProductTool\UpdateProductCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Dotenv\Dotenv;
 
@@ -22,7 +23,8 @@ $env->load(...$envFiles);
 $application = new Application();
 
 // ... register commands
-$application->add(new UpsertProductCommand());
+$application->add(new CreateProductCommand());
+$application->add(new UpdateProductCommand());
 
 $application->run();
 

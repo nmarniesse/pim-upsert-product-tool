@@ -14,8 +14,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'app:generate-products')]
-final class UpsertProductCommand extends Command
+#[AsCommand(name: 'app:create-products')]
+final class CreateProductCommand extends Command
 {
     private array $channels;
     private array $families;
@@ -80,33 +80,38 @@ final class UpsertProductCommand extends Command
                 continue;
             }
 
-            $value = ['scope' => null, 'locale' => null];
-            $channel = null;
+            $channels = [['code' => null, 'locales' => $this->channels[0]['locales']]];
             if ($attribute['scopable']) {
-                $channel = $this->channels[rand(0, \count($this->channels) - 1)];
-                $value['scope'] = $channel['code'];
+                $channels = $this->channels;
             }
 
-            if ($attribute['localizable']) {
-                $channel = $channel ?? $this->channels[0];
-                $localeCodes = $channel['locales'];
-                $value['locale'] = $localeCodes[rand(0, \count($localeCodes) - 1)];
+            foreach ($channels as $channel) {
+                $localeCodes = [null];
+                if ($attribute['localizable']) {
+                    $channel = $channel ?? $this->channels[0];
+                    $localeCodes = $channel['locales'];
+                    $value['locale'] = $localeCodes[rand(0, \count($localeCodes) - 1)];
+                    $localeCodes = $channel['locales'];
+                }
+
+                foreach ($localeCodes as $localeCode) {
+                    $value = ['scope' => $channel['code'], 'locale' => $localeCode];
+                    $value['data'] = match ($attribute['type']) {
+                        'pim_catalog_identifier' => 'FAKER_' . \strtoupper($faker->unique()->uuid()),
+                        'pim_catalog_text', 'pim_catalog_textarea' => $faker->text(),
+                        'pim_catalog_number' => $faker->randomNumber(),
+                        'pim_catalog_boolean' => $faker->boolean(),
+                        'pim_catalog_date' => $faker->date(),
+                        default => null,
+                    };
+
+                    if (null === $value['data']) {
+                        continue;
+                    }
+
+                    $data['values'][$attributeCode][] = $value;
+                }
             }
-
-            $value['data'] = match ($attribute['type']) {
-                'pim_catalog_identifier' => 'FAKER_' . \strtoupper($faker->unique()->uuid()),
-                'pim_catalog_text', 'pim_catalog_textarea' => $faker->text(),
-                'pim_catalog_number' => $faker->randomNumber(),
-                'pim_catalog_boolean' => $faker->boolean(),
-                'pim_catalog_date' => $faker->date(),
-                default => null,
-            };
-
-            if (null === $value['data']) {
-                continue;
-            }
-
-            $data['values'][$attributeCode][] = $value;
         }
 
         return $data;
