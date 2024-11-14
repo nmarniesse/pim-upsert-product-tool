@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PimUpsertProductTool;
 
-use Akeneo\Pim\ApiClient\AkeneoPimClientBuilder;
+use Akeneo\Pim\ApiClient\Exception\UnprocessableEntityHttpException;
 use Faker\Factory;
 use PimUpsertProductTool\Product\ValuesGenerator;
 use Ramsey\Uuid\Uuid;
@@ -20,6 +20,7 @@ final class CreateProductCommand extends Command
     protected function configure(): void
     {
         $this->addOption('count', 'c', InputOption::VALUE_OPTIONAL, 'Number of products to generate', 0);
+        $this->addOption('family', null, InputOption::VALUE_OPTIONAL, 'Family of the products');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -49,7 +50,7 @@ final class CreateProductCommand extends Command
             $i++;
             $uuid = Uuid::uuid4();
 
-            $family = $families[rand(0, \count($families) - 1)];
+            $family = $this->getFamily($families, $input->getOption('family'));
             $data = [
                 'family' => $family['code'],
                 'values' => $valuesGenerator->generateValues(
@@ -60,11 +61,34 @@ final class CreateProductCommand extends Command
                     $family
                 )
             ];
-            $client->getProductApi()->upsert($uuid->toString(), $data);
+            try {
+                $client->getProductUuidApi()->upsert($uuid->toString(), $data);
+            } catch (UnprocessableEntityHttpException $e) {
+                print_r($e->getMessage());
+                print_r($data);
+                print_r($e->getResponseErrors());
+
+                throw $e;
+            }
             $output->writeln('<info>[' . $i . '] Product created: ' . $uuid->toString() . '</info>');
-//            print_r($data);
+            sleep(1);
         } while ($numberOfProductsToGenerate <= 0 || $i < $numberOfProductsToGenerate);
 
         return Command::SUCCESS;
+    }
+
+    private function getFamily(array $families, string|null $familyCode): array
+    {
+        if (null !== $familyCode) {
+            foreach ($families as $family) {
+                if ($family['code'] === 'mas_test') {
+                    return $family;
+                }
+            }
+        }
+
+        $family = $families[rand(0, \count($families) - 1)];
+
+        return $family;
     }
 }

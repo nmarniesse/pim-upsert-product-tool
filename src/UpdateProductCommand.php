@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace PimUpsertProductTool;
 
-use Akeneo\Pim\ApiClient\AkeneoPimClientBuilder;
 use Faker\Factory;
 use PimUpsertProductTool\Product\ValuesGenerator;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -76,9 +75,8 @@ final class UpdateProductCommand extends Command
                     $family
                 )
             ];
-            $client->getProductApi()->upsert($product['uuid'], $data);
+            $client->getProductUuidApi()->upsert($product['uuid'], $data);
             $output->writeln('<info>[' . $i . '] Product updated: ' . $product['uuid'] . '</info>');
-//            print_r($data);
         } while ($numberOfProductsToUpdate <= 0 || $i < $numberOfProductsToUpdate);
 
         return Command::SUCCESS;
