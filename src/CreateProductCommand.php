@@ -17,6 +17,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'app:create-products')]
 final class CreateProductCommand extends Command
 {
+    // Set to 1 to use single upsert API endpoint
+    private const PRODUCTS_BY_BATCH = 100;
+
     protected function configure(): void
     {
         $this->addOption('count', 'c', InputOption::VALUE_OPTIONAL, 'Number of products to generate', 0);
@@ -32,8 +35,11 @@ final class CreateProductCommand extends Command
         $channels = \iterator_to_array($client->getChannelApi()->all());
         $output->writeln(\sprintf('<info>%d channels found.</info>', \count($channels)));
 
-        $families = \iterator_to_array($client->getFamilyApi()->all());
-        $output->writeln(\sprintf('<info>%d families found.</info>', \count($families)));
+        $indexedFamilies = [];
+        foreach ($client->getFamilyApi()->all() as $family) {
+            $indexedFamilies[$family['code']] = $family;
+        }
+        $output->writeln(\sprintf('<info>%d families found.</info>', \count($indexedFamilies)));
 
         $indexedAttributes = [];
         foreach ($client->getAttributeApi()->all() as $attribute) {
@@ -45,13 +51,15 @@ final class CreateProductCommand extends Command
         $output->writeln('Begin to generate products...');
         $valuesGenerator = new ValuesGenerator();
 
+        $batchProducts = [];
         $i = 0;
         do {
             $i++;
             $uuid = Uuid::uuid4();
 
-            $family = $this->getFamily($families, $input->getOption('family'));
+            $family = $this->getFamily($indexedFamilies, $input->getOption('family'));
             $data = [
+                'uuid' => $uuid->toString(),
                 'family' => $family['code'],
                 'values' => $valuesGenerator->generateValues(
                     $client,
@@ -62,7 +70,18 @@ final class CreateProductCommand extends Command
                 )
             ];
             try {
-                $client->getProductUuidApi()->upsert($uuid->toString(), $data);
+                if (1 === self::PRODUCTS_BY_BATCH) {
+                    $client->getProductUuidApi()->upsert($uuid->toString(), $data);
+                    $output->writeln('<info>[' . $i . '] Product created: ' . $uuid->toString() . '</info>');
+                } else {
+                    $batchProducts[] = $data;
+
+                    if (\count($batchProducts) >= self::PRODUCTS_BY_BATCH) {
+                        $client->getProductUuidApi()->upsertList($batchProducts);
+                        $output->writeln('<info>[' . $i . '] Products created</info>');
+                        $batchProducts = [];
+                    }
+                }
             } catch (UnprocessableEntityHttpException $e) {
                 print_r($e->getMessage());
                 print_r($data);
@@ -70,9 +89,12 @@ final class CreateProductCommand extends Command
 
                 throw $e;
             }
-            $output->writeln('<info>[' . $i . '] Product created: ' . $uuid->toString() . '</info>');
-            sleep(1);
         } while ($numberOfProductsToGenerate <= 0 || $i < $numberOfProductsToGenerate);
+
+        if (\count($batchProducts) > 0) {
+            $client->getProductUuidApi()->upsertList($batchProducts);
+            $output->writeln('<info>[' . $i . '] Products created</info>');
+        }
 
         return Command::SUCCESS;
     }
@@ -80,14 +102,15 @@ final class CreateProductCommand extends Command
     private function getFamily(array $families, string|null $familyCode): array
     {
         if (null !== $familyCode) {
-            foreach ($families as $family) {
-                if ($family['code'] === 'mas_test') {
-                    return $family;
-                }
+            $family = $families[$familyCode] ?? null;
+            if (null === $family) {
+                throw new \Exception('Could not find family');
             }
+
+            return $family;
         }
 
-        $family = $families[rand(0, \count($families) - 1)];
+        $family = \array_values($families)[rand(0, \count($families) - 1)];
 
         return $family;
     }
