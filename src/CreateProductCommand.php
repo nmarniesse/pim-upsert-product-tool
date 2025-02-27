@@ -60,6 +60,7 @@ final class CreateProductCommand extends Command
             $family = $this->getFamily($indexedFamilies, $input->getOption('family'));
             $data = [
                 'uuid' => $uuid->toString(),
+                'identifier' => $uuid->toString(),
                 'family' => $family['code'],
                 'values' => $valuesGenerator->generateValues(
                     $client,
@@ -77,7 +78,14 @@ final class CreateProductCommand extends Command
                     $batchProducts[] = $data;
 
                     if (\count($batchProducts) >= self::PRODUCTS_BY_BATCH) {
-                        $client->getProductUuidApi()->upsertList($batchProducts);
+                        $responses = $client->getProductUuidApi()->upsertList($batchProducts);
+                        foreach ($responses as $response) {
+                            if ($response['status_code'] !== 201) {
+                                $output->writeln('<error>' . $response['status_code'] . '</error>');
+                                $output->writeln(print_r($response, true));
+                            }
+                        }
+
                         $output->writeln('<info>[' . $i . '] Products created</info>');
                         $batchProducts = [];
                     }
