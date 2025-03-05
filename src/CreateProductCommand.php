@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PimUpsertProductTool;
 
+use Akeneo\Pim\ApiClient\AkeneoPimClient;
 use Akeneo\Pim\ApiClient\Exception\UnprocessableEntityHttpException;
 use Faker\Factory;
 use PimUpsertProductTool\Product\ValuesGenerator;
@@ -71,24 +72,12 @@ final class CreateProductCommand extends Command
                 )
             ];
             try {
-                if (1 === self::PRODUCTS_BY_BATCH) {
-                    $client->getProductUuidApi()->upsert($uuid->toString(), $data);
-                    $output->writeln('<info>[' . $i . '] Product created: ' . $uuid->toString() . '</info>');
-                } else {
-                    $batchProducts[] = $data;
+                $batchProducts[] = $data;
 
-                    if (\count($batchProducts) >= self::PRODUCTS_BY_BATCH) {
-                        $responses = $client->getProductUuidApi()->upsertList($batchProducts);
-                        foreach ($responses as $response) {
-                            if ($response['status_code'] >= 400) {
-                                $output->writeln('<error>' . $response['status_code'] . '</error>');
-                                $output->writeln(print_r($response, true));
-                            }
-                        }
-
-                        $output->writeln('<info>[' . $i . '] Products created</info>');
-                        $batchProducts = [];
-                    }
+                if (\count($batchProducts) >= self::PRODUCTS_BY_BATCH) {
+                    $this->upsertProducts($client, $output, $batchProducts);
+                    $output->writeln('<info>[' . $i . '] Products created</info>');
+                    $batchProducts = [];
                 }
             } catch (UnprocessableEntityHttpException $e) {
                 print_r($e->getMessage());
@@ -100,11 +89,22 @@ final class CreateProductCommand extends Command
         } while ($numberOfProductsToGenerate <= 0 || $i < $numberOfProductsToGenerate);
 
         if (\count($batchProducts) > 0) {
-            $client->getProductUuidApi()->upsertList($batchProducts);
+            $this->upsertProducts($client, $output, $batchProducts);
             $output->writeln('<info>[' . $i . '] Products created</info>');
         }
 
         return Command::SUCCESS;
+    }
+
+    private function upsertProducts(AkeneoPimClient $client, OutputInterface $output, array $products): void
+    {
+        $responses = $client->getProductUuidApi()->upsertList($products);
+        foreach ($responses as $response) {
+            if ($response['status_code'] >= 400) {
+                $output->writeln('<error>' . $response['status_code'] . '</error>');
+                $output->writeln(print_r($response, true));
+            }
+        }
     }
 
     private function getFamily(array $families, string|null $familyCode): array
