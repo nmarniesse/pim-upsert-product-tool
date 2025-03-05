@@ -80,7 +80,7 @@ final class CreateProductCommand extends Command
                     if (\count($batchProducts) >= self::PRODUCTS_BY_BATCH) {
                         $responses = $client->getProductUuidApi()->upsertList($batchProducts);
                         foreach ($responses as $response) {
-                            if ($response['status_code'] !== 201) {
+                            if ($response['status_code'] >= 400) {
                                 $output->writeln('<error>' . $response['status_code'] . '</error>');
                                 $output->writeln(print_r($response, true));
                             }

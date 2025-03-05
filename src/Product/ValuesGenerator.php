@@ -52,7 +52,8 @@ final class ValuesGenerator
                     $value = ['scope' => $channel['code'], 'locale' => $localeCode];
                     $value['data'] = match ($attribute['type']) {
                         'pim_catalog_identifier' => 'FAKER_' . \strtoupper($faker->unique()->uuid()),
-                        'pim_catalog_text', 'pim_catalog_textarea' => $faker->text(),
+                        'pim_catalog_text' => $faker->text(50),
+                        'pim_catalog_textarea' => $faker->text(),
                         'pim_catalog_number' => $faker->randomNumber(),
                         'pim_catalog_boolean' => $faker->boolean(),
                         'pim_catalog_date' => $faker->date(),
