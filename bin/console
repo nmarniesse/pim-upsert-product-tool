@@ -4,9 +4,6 @@
 
 require __DIR__.'/../vendor/autoload.php';
 
-use PimUpsertProductTool\CreateProductCommand;
-use PimUpsertProductTool\UpdateProductCommand;
-use PimUpsertProductTool\InsertSimpleSelectAttributesCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Dotenv\Dotenv;
 
@@ -24,9 +21,11 @@ $env->load(...$envFiles);
 $application = new Application();
 
 // ... register commands
-$application->add(new CreateProductCommand());
-$application->add(new UpdateProductCommand());
-$application->add(new InsertSimpleSelectAttributesCommand());
+$application->add(new \PimUpsertProductTool\CreateProductCommand());
+$application->add(new \PimUpsertProductTool\UpdateProductCommand());
+$application->add(new \PimUpsertProductTool\Attribute\CreateSimpleSelectAttributesCommand());
+$application->add(new \PimUpsertProductTool\Attribute\CreateAttributesCommand());
+$application->add(new \PimUpsertProductTool\Family\CreateHierarchicalFamiliesCommand());
 
 $application->run();
 
