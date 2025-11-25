@@ -61,7 +61,6 @@ final class CreateProductCommand extends Command
             $family = $this->getFamily($indexedFamilies, $input->getOption('family'));
             $data = [
                 'uuid' => $uuid->toString(),
-                'identifier' => $uuid->toString(),
                 'family' => $family['code'],
                 'values' => $valuesGenerator->generateValues(
                     $client,
